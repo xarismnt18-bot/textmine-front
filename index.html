@@ -975,14 +975,7 @@ const renderers = {bertopic:renderTopics, lda:renderTopics, tfidf:renderTfidf, w
 // ── Run ──
 async function runAnalysis() {
   if (!uploadedFiles.length) { showError('Please upload at least one file.'); return; }
-  // Warn if BERTopic selected but Render URL is active (not Colab)
-  if (activeMethod === 'bertopic') {
-    const url = getApiUrl();
-    if (!url.includes('ngrok') && !url.includes('colab') && !url.includes('localhost')) {
-      showError('⚠️ BERTopic requires the Colab URL. Paste your ngrok URL in the Backend URL field above, or switch to LDA for fast topic modeling.');
-      return;
-    }
-  }
+  // Note: BERTopic URL check removed — user is responsible for using Colab URL
   hideError();
   document.getElementById('runBtn').disabled=true;
   document.getElementById('placeholder').style.display='none';
