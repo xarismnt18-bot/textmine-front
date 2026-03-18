@@ -86,6 +86,11 @@ select:focus{border-color:var(--accent)}
 .run-btn{width:100%;padding:15px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--accent),#9c6dfa);color:white;font-family:var(--font-display);font-size:15px;font-weight:700;transition:all .25s;margin-top:4px}
 .run-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,109,250,0.4)}
 .run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.cancel-btn{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(250,109,154,0.4);cursor:pointer;background:rgba(250,109,154,0.08);color:var(--accent2);font-family:var(--font-display);font-size:13px;font-weight:700;transition:all .2s;margin-top:8px;display:none}
+.cancel-btn.visible{display:block}
+.cancel-btn:hover{background:rgba(250,109,154,0.16);border-color:var(--accent2)}
+.elapsed-timer{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:10px;letter-spacing:.05em}
+.progress-hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
 /* Error */
 .error-banner{grid-column:1/-1;background:rgba(250,109,154,0.08);border:1px solid rgba(250,109,154,0.3);border-radius:12px;padding:16px 20px;display:none;color:var(--accent2);font-size:14px}
 .error-banner.visible{display:block}
@@ -476,6 +481,9 @@ select:focus{border-color:var(--accent)}
         <div class="progress-label" id="progressLabel">⚙️ Processing...</div>
         <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
         <div class="progress-step" id="progressStep">Sending files to backend...</div>
+        <div class="elapsed-timer" id="elapsedTimer"></div>
+        <div class="progress-hint" id="progressHint"></div>
+        <button class="cancel-btn" id="cancelBtn" onclick="cancelAnalysis()">✕ &nbsp; Cancel</button>
       </div>
     </div>
 
@@ -610,12 +618,11 @@ async function pingApi() {
   status.className = 'api-status'; // grey = loading
   try {
     const res = await fetch(getApiUrl()+'/health', {
-      signal: AbortSignal.timeout(90000),
+      signal: AbortSignal.timeout(15000),
       headers: {'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json'}
     });
     if (res.ok) {
-      const data = await res.json().catch(() => ({}));
-      status.className = (data.status === 'healthy' || data.status === 'ok') ? 'api-status ok' : 'api-status ok';
+      status.className = 'api-status ok';
     } else {
       status.className = 'api-status err';
     }
@@ -634,17 +641,61 @@ const STEPS = {
   sentiment:['Uploading files...','Loading sentiment model...','Scoring sentences...','Aggregating results...']
 };
 let progressInterval = null;
+let elapsedInterval = null;
+let currentAbortController = null;
+let analysisStartTime = null;
+
+function cancelAnalysis() {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
+  stopProgress();
+  document.getElementById('progressWrap').classList.remove('visible');
+  document.getElementById('placeholder').style.display = '';
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('cancelBtn').classList.remove('visible');
+  showError('Analysis cancelled.');
+}
+
 function startProgress(method) {
   const steps = STEPS[method]; let i=0;
   document.getElementById('progressFill').style.width='5%';
   document.getElementById('progressStep').textContent=steps[0];
+  document.getElementById('cancelBtn').classList.add('visible');
+  document.getElementById('elapsedTimer').textContent = '';
+  document.getElementById('progressHint').textContent = '';
+
+  // Step ticker
   progressInterval = setInterval(()=>{
     i=Math.min(i+1,steps.length-1);
     document.getElementById('progressStep').textContent=steps[i];
     document.getElementById('progressFill').style.width=(5+(i/(steps.length-1))*70)+'%';
-  },2000);
+  },3000);
+
+  // Elapsed timer — shows seconds, adds hint after 30s
+  analysisStartTime = Date.now();
+  elapsedInterval = setInterval(() => {
+    const secs = Math.floor((Date.now() - analysisStartTime) / 1000);
+    document.getElementById('elapsedTimer').textContent = `⏱ ${secs}s elapsed`;
+    if (secs === 30) {
+      document.getElementById('progressHint').textContent = '⚡ BERTopic is generating BERT embeddings — this takes 1–3 min for large files. Keep this tab open.';
+    } else if (secs === 90) {
+      document.getElementById('progressHint').textContent = '🔄 Still running… Colab GPU is working hard. Large corpora (1000+ docs) can take 3–5 min. Please wait.';
+    } else if (secs === 180) {
+      document.getElementById('progressHint').textContent = '⌛ This is taking longer than usual. If Colab shows no activity, try restarting Cell 3 and re-pasting the URL.';
+    }
+  }, 1000);
 }
-function stopProgress() { clearInterval(progressInterval); document.getElementById('progressFill').style.width='100%'; }
+
+function stopProgress() {
+  clearInterval(progressInterval);
+  clearInterval(elapsedInterval);
+  document.getElementById('progressFill').style.width='100%';
+  document.getElementById('cancelBtn').classList.remove('visible');
+  document.getElementById('elapsedTimer').textContent = '';
+  document.getElementById('progressHint').textContent = '';
+}
 
 // ── Build FormData ──
 function buildForm() {
@@ -940,8 +991,11 @@ async function runAnalysis() {
   document.getElementById('progressLabel').textContent='⚙️ Running '+activeMethod.toUpperCase()+'...';
   document.getElementById('progressFill').style.width='0%';
   startProgress(activeMethod);
+
+  // Fresh abort controller — NO timeout, only cancelled manually
+  currentAbortController = new AbortController();
+
   try {
-    // Route wordfreq through LDA, tfidf_distinct through perdoc
     let endpoint = activeMethod;
     if (activeMethod === 'tfidf' && document.getElementById('tfidfDistinct') && document.getElementById('tfidfDistinct').classList.contains('on')) {
       endpoint = 'tfidf_perdoc';
@@ -950,11 +1004,15 @@ async function runAnalysis() {
       endpoint = 'lda';
     }
     const formData = buildForm();
-    // For word cloud (LDA): always append all files as 'files'
     if (activeMethod === 'wordfreq') {
       uploadedFiles.forEach(f => formData.append('files', f));
     }
-    const res = await fetch(`${getApiUrl()}/analyze/${endpoint}`, {method:'POST', body:formData, headers:{'ngrok-skip-browser-warning':'true'}});
+    const res = await fetch(`${getApiUrl()}/analyze/${endpoint}`, {
+      method:'POST',
+      body:formData,
+      headers:{'ngrok-skip-browser-warning':'true'},
+      signal: currentAbortController.signal   // only aborts on cancel button
+    });
     stopProgress();
     if (!res.ok) {
       const err = await res.json().catch(()=>({detail:'Unknown error'}));
@@ -973,11 +1031,20 @@ async function runAnalysis() {
     document.getElementById('tabRaw').style.display='none';
     renderers[activeMethod](data);
   } catch(e) {
+    if (e.name === 'AbortError') return; // user cancelled — already handled
     stopProgress();
     document.getElementById('progressWrap').classList.remove('visible');
     document.getElementById('placeholder').style.display='';
-    showError(e.message||'Failed to reach backend.');
-  } finally { document.getElementById('runBtn').disabled=false; }
+    // Better error messages for common failures
+    let msg = e.message || 'Failed to reach backend.';
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      msg = '🔌 Cannot reach backend. Check: (1) Colab tab is still open, (2) ngrok URL is pasted correctly, (3) click Test button above.';
+    }
+    showError(msg);
+  } finally {
+    document.getElementById('runBtn').disabled=false;
+    currentAbortController = null;
+  }
 }
 
 function showError(msg) { const b=document.getElementById('errorBanner'); b.textContent='⚠️ '+msg; b.classList.add('visible'); }
