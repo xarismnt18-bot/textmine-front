@@ -679,11 +679,25 @@ function startProgress(method) {
     const secs = Math.floor((Date.now() - analysisStartTime) / 1000);
     document.getElementById('elapsedTimer').textContent = `⏱ ${secs}s elapsed`;
     if (secs === 30) {
-      document.getElementById('progressHint').textContent = '⚡ BERTopic is generating BERT embeddings — this takes 1–3 min for large files. Keep this tab open.';
+      const hints = {
+        bertopic: '⚡ BERTopic is generating BERT embeddings — this takes 1–3 min for large files. Keep this tab open.',
+        lda: '⚡ LDA is iterating over your corpus — almost there.',
+        tfidf: '⚡ Computing TF-IDF scores across your documents…',
+        wordfreq: '⚡ Building word cloud from LDA topics…',
+        sentiment: '⚡ Scoring sentences — large files may take a moment.'
+      };
+      document.getElementById('progressHint').textContent = hints[activeMethod] || '⚡ Processing your documents…';
     } else if (secs === 90) {
-      document.getElementById('progressHint').textContent = '🔄 Still running… Colab GPU is working hard. Large corpora (1000+ docs) can take 3–5 min. Please wait.';
+      const hints90 = {
+        bertopic: '🔄 Still running… Colab GPU is working hard. Large corpora (1000+ docs) can take 3–5 min. Please wait.',
+        lda: '🔄 Still running… LDA is iterating. Large files take a bit longer.',
+        tfidf: '🔄 Still computing… large vocabulary takes a moment.',
+        wordfreq: '🔄 Still building topics for the word cloud…',
+        sentiment: '🔄 Still scoring… large files with many sentences take longer.'
+      };
+      document.getElementById('progressHint').textContent = hints90[activeMethod] || '🔄 Still running…';
     } else if (secs === 180) {
-      document.getElementById('progressHint').textContent = '⌛ This is taking longer than usual. If Colab shows no activity, try restarting Cell 3 and re-pasting the URL.';
+      document.getElementById('progressHint').textContent = '⌛ This is taking longer than usual. Check that your backend is still active and the URL is correct.';
     }
   }, 1000);
 }
@@ -965,7 +979,7 @@ function renderSentiment(data) {
     <div class="sent-pill neu"><div class="sent-pill-pct">${s.neutral_pct}%</div><div class="sent-pill-label">Neutral</div></div>
     <div class="sent-pill neg"><div class="sent-pill-pct">${s.negative_pct}%</div><div class="sent-pill-label">Negative</div></div>
   </div>
-  \${data.sentences.length < data.summary.total_sentences ? \`<div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:8px;">Showing \${data.sentences.length} of \${data.summary.total_sentences} sentences</div>\` : ''}<table class="sent-table"><thead><tr><th>Sentence</th><th>Label</th><th>Score</th></tr></thead>
+  ${data.sentences.length < data.summary.total_sentences ? `<div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:8px;">Showing ${data.sentences.length} of ${data.summary.total_sentences} sentences</div>` : ''}<table class="sent-table"><thead><tr><th>Sentence</th><th>Label</th><th>Score</th></tr></thead>
   <tbody>${data.sentences.slice(0,200).map(r=>`<tr><td>${r.sentence}</td><td><span class="sent-label ${r.label}">${r.label}</span></td><td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">${r.compound.toFixed(3)}</td></tr>`).join('')}</tbody></table>`;
   document.getElementById('tabSummary').appendChild(wrap);
 }
