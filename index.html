@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TextMine — NLP Analysis Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3a;--accent:#7c6dfa;--accent2:#fa6d9a;--accent3:#6dfacc;--text:#e8e8f0;--muted:#7070a0;--font-display:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+.bg-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(124,109,250,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,109,250,0.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.bg-glow{position:fixed;z-index:0;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:.18}
+.bg-glow.g1{width:600px;height:600px;background:var(--accent);top:-200px;left:-200px}
+.bg-glow.g2{width:500px;height:500px;background:var(--accent2);bottom:-150px;right:-150px}
+.shell{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 24px 80px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:28px 0 40px;border-bottom:1px solid var(--border);margin-bottom:48px}
+.logo{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:10px}
+.logo-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 12px var(--accent)}
+.nav-tag{font-family:var(--font-mono);font-size:11px;color:var(--muted);border:1px solid var(--border);padding:4px 12px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase}
+.api-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.api-bar label{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+.api-bar input{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .2s}
+.api-bar input:focus{border-color:var(--accent)}
+.api-status{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
+.api-status.ok{background:var(--accent3);box-shadow:0 0 8px var(--accent3)}
+.api-status.err{background:var(--accent2);box-shadow:0 0 8px var(--accent2)}
+.colab-note{background:rgba(109,250,204,0.06);border:1px solid rgba(109,250,204,0.2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--accent3);display:flex;gap:10px;align-items:flex-start;margin-bottom:24px}
+.hero{margin-bottom:48px}
+.hero-label{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.hero-label::before{content:'';display:block;width:24px;height:1px;background:var(--accent)}
+h1{font-family:var(--font-display);font-size:clamp(36px,5vw,62px);font-weight:800;line-height:1.05;letter-spacing:-2px;background:linear-gradient(135deg,#e8e8f0 30%,var(--accent) 70%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.hero-sub{font-size:16px;color:var(--muted);line-height:1.6;max-width:540px;font-weight:300}
+.main-grid{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .2s}
+.card-title{font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.card-title span{font-size:16px}
+/* Upload */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(124,109,250,0.05)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:36px;margin-bottom:12px;display:block}
+.upload-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:6px}
+.upload-sub{font-size:12px;color:var(--muted)}
+.badge-row{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.badge{font-family:var(--font-mono);font-size:10px;font-weight:500;padding:3px 9px;border-radius:5px;letter-spacing:.05em;text-transform:uppercase}
+.badge.txt{background:rgba(109,250,204,0.12);color:var(--accent3);border:1px solid rgba(109,250,204,0.2)}
+.badge.pdf{background:rgba(250,109,154,0.12);color:var(--accent2);border:1px solid rgba(250,109,154,0.2)}
+.badge.xlsx{background:rgba(124,109,250,0.12);color:var(--accent);border:1px solid rgba(124,109,250,0.2)}
+.file-list{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.file-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.file-icon{font-size:16px}
+.file-name{flex:1;font-family:var(--font-mono);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:11px;color:var(--muted)}
+.file-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;transition:color .2s}
+.file-remove:hover{color:var(--accent2)}
+/* Methods */
+.methods{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.method-card{border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative;overflow:hidden}
+.method-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;background:linear-gradient(135deg,rgba(124,109,250,0.08),transparent)}
+.method-card:hover::before,.method-card.active::before{opacity:1}
+.method-card.active{border-color:var(--accent)}
+.method-icon{font-size:20px;margin-bottom:6px}
+.method-name{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:3px}
+.method-desc{font-size:11px;color:var(--muted);line-height:1.4}
+.method-check{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:var(--accent);display:none;align-items:center;justify-content:center;font-size:9px}
+.method-card.active .method-check{display:flex}
+/* Config */
+.config-row{margin-bottom:16px}
+.config-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;justify-content:space-between}
+.config-label .val{color:var(--accent)}
+input[type=range]{width:100%;height:4px;border-radius:4px;cursor:pointer;appearance:none;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,50%),var(--border) var(--pct,50%),var(--border) 100%)}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font-body);cursor:pointer;outline:none;transition:border-color .2s}
+select:focus{border-color:var(--accent)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border:none}
+.toggle-label{font-size:13px}
+.toggle-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.toggle{width:36px;height:20px;border-radius:10px;background:var(--border);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:white;top:3px;left:3px;transition:left .2s}
+.toggle.on::after{left:19px}
+/* Run btn */
+.run-btn{width:100%;padding:15px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--accent),#9c6dfa);color:white;font-family:var(--font-display);font-size:15px;font-weight:700;transition:all .25s;margin-top:4px}
+.run-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,109,250,0.4)}
+.run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+/* Error */
+.error-banner{grid-column:1/-1;background:rgba(250,109,154,0.08);border:1px solid rgba(250,109,154,0.3);border-radius:12px;padding:16px 20px;display:none;color:var(--accent2);font-size:14px}
+.error-banner.visible{display:block}
+/* Results */
+.results-placeholder{grid-column:1/-1;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.results-icon{font-size:44px;opacity:.3}
+.results-msg{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--muted)}
+.results-sub{font-size:13px;color:var(--muted);opacity:.7}
+.results-panel{grid-column:1/-1;display:none}
+.results-panel.visible{display:block}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.results-title{font-family:var(--font-display);font-size:20px;font-weight:800}
+.results-meta{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:18px;width:fit-content}
+.tab{font-family:var(--font-mono);font-size:11px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;color:var(--muted);border:none;background:none;transition:all .2s;text-transform:uppercase;letter-spacing:.06em}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.topic-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;animation:slideIn .3s ease both}
+.topic-num{font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;justify-content:space-between}
+.topic-words{display:flex;flex-wrap:wrap;gap:5px}
+.topic-word{font-size:12px;padding:3px 9px;border-radius:5px;background:rgba(124,109,250,0.1);border:1px solid rgba(124,109,250,0.2);color:var(--text);font-family:var(--font-mono)}
+.topic-word.w1{font-size:14px;font-weight:600;background:rgba(124,109,250,0.2)}
+.topic-word.w2{font-size:13px}
+.wordcloud-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:32px;min-height:240px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px}
+.wc-word{font-family:var(--font-display);font-weight:700;animation:fadeUp .4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+.tfidf-list{display:flex;flex-direction:column;gap:8px}
+.tfidf-item{display:flex;align-items:center;gap:10px}
+.tfidf-word{font-family:var(--font-mono);font-size:13px;width:130px;flex-shrink:0}
+.tfidf-bar-wrap{flex:1;background:var(--surface2);border-radius:4px;height:7px;overflow:hidden}
+.tfidf-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent3),var(--accent));transition:width .8s ease}
+.tfidf-score{font-family:var(--font-mono);font-size:11px;color:var(--muted);width:42px;text-align:right}
+.sentiment-summary{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.sent-pill{flex:1;min-width:100px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.sent-pill-pct{font-family:var(--font-display);font-size:28px;font-weight:800}
+.sent-pill-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.sent-pill.pos .sent-pill-pct{color:var(--accent3)}
+.sent-pill.neu .sent-pill-pct{color:var(--accent)}
+.sent-pill.neg .sent-pill-pct{color:var(--accent2)}
+.sent-table{width:100%;border-collapse:collapse;font-size:13px}
+.sent-table th{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.sent-table td{padding:8px 12px;border-bottom:1px solid rgba(42,42,58,.5);vertical-align:top;line-height:1.4}
+.sent-label{display:inline-block;padding:2px 8px;border-radius:4px;font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase}
+.sent-label.positive{background:rgba(109,250,204,0.15);color:var(--accent3)}
+.sent-label.neutral{background:rgba(124,109,250,0.15);color:var(--accent)}
+.sent-label.negative{background:rgba(250,109,154,0.15);color:var(--accent2)}
+.progress-wrap{grid-column:1/-1;display:none}
+.progress-wrap.visible{display:block}
+.progress-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;text-align:center}
+.progress-label{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:20px}
+.progress-bar-bg{background:var(--surface2);border-radius:8px;height:6px;overflow:hidden;max-width:380px;margin:0 auto 16px}
+.progress-bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .4s ease}
+.progress-step{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.raw-code{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.7;white-space:pre-wrap;overflow-x:auto;max-height:400px;overflow-y:auto}
+.coherence-btn{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(109,250,204,0.3);cursor:pointer;background:rgba(109,250,204,0.06);color:var(--accent3);font-family:var(--font-display);font-size:13px;font-weight:700;transition:all .2s;margin-top:8px}
+.coherence-btn:hover{background:rgba(109,250,204,0.12);border-color:var(--accent3)}
+.coherence-btn:disabled{opacity:.5;cursor:not-allowed}
+.coherence-panel{grid-column:1/-1;background:var(--surface);border:1px solid rgba(109,250,204,0.2);border-radius:16px;padding:28px;display:none}
+.coherence-panel.visible{display:block}
+.coherence-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.coherence-title{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--accent3)}
+.optimal-badge{background:rgba(109,250,204,0.15);border:1px solid rgba(109,250,204,0.3);color:var(--accent3);font-family:var(--font-mono);font-size:12px;padding:6px 14px;border-radius:20px}
+.coherence-chart{position:relative;height:220px;margin:20px 0}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:180px;padding:0 4px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.chart-bar{width:100%;border-radius:4px 4px 0 0;transition:all .3s;background:linear-gradient(180deg,var(--accent3),rgba(109,250,204,0.3));min-height:4px;position:relative}
+.chart-bar.optimal{background:linear-gradient(180deg,#fff,var(--accent3));box-shadow:0 0 12px var(--accent3)}
+.chart-bar:hover{opacity:.8}
+.chart-label{font-family:var(--font-mono);font-size:9px;color:var(--muted);text-align:center}
+.chart-label.optimal{color:var(--accent3);font-weight:700}
+.chart-axes{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:4px}
+.coherence-rec{background:rgba(109,250,204,0.06);border:1px solid rgba(109,250,204,0.2);border-radius:10px;padding:14px 18px;font-size:14px;color:var(--accent3);display:flex;gap:12px;align-items:center;margin-top:16px}
+.perp-chart{margin-top:20px}
+.perp-title{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.perp-line{height:60px;position:relative;background:var(--surface2);border-radius:8px;overflow:hidden}
+.perp-svg{width:100%;height:100%}
+@media(max-width:780px){.main-grid{grid-template-columns:1fr}.methods{grid-template-columns:1fr 1fr}h1{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow g1"></div>
+<div class="bg-glow g2"></div>
+
+<div class="shell">
+  <nav>
+    <div class="logo"><div class="logo-dot"></div>TextMine</div>
+    <div class="nav-tag">NLP Platform v2.0</div>
+  </nav>
+
+  <div class="api-bar">
+    <label>Backend URL</label>
+    <input type="text" id="apiUrl" value="https://textmine-backend.onrender.com" placeholder="Paste your Colab or Render URL here" oninput="localStorage.setItem('textmine_api_url', this.value)"/>
+    <div class="api-status" id="apiStatus"></div>
+    <button onclick="pingApi()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 14px;cursor:pointer;font-family:var(--font-mono);font-size:11px;">Test</button>
+  </div>
+
+  <div class="colab-note">
+    <span>🔬</span>
+    <div>For <strong>real BERTopic</strong> with BERT embeddings, run the <strong>TextMine_Colab.ipynb</strong> notebook in Google Colab, then paste the ngrok URL above. For basic analysis, the Render URL works fine.</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-label">Topic Modeling · Text Mining · NLP</div>
+    <h1>Analyze Text.<br/>Uncover Meaning.</h1>
+    <p class="hero-sub">Upload multiple documents and run state-of-the-art NLP analysis — real BERTopic, LDA, TF-IDF, Word Cloud and Sentiment — in seconds.</p>
+  </div>
+
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <!-- Upload -->
+      <div class="card">
+        <div class="card-title"><span>📂</span> Upload Documents <span style="font-size:11px;color:var(--accent3);font-family:var(--font-mono);margin-left:auto;text-transform:none;letter-spacing:0">Multiple files supported</span></div>
+        <div class="upload-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".txt,.pdf,.xlsx" multiple/>
+          <span class="upload-icon">🗂️</span>
+          <div class="upload-title">Drop files here</div>
+          <div class="upload-sub">or click to browse — select multiple files at once</div>
+          <div class="badge-row">
+            <span class="badge txt">TXT</span>
+            <span class="badge pdf">PDF</span>
+            <span class="badge xlsx">XLSX</span>
+          </div>
+        </div>
+        <div class="file-list" id="fileList"></div>
+      </div>
+
+      <!-- Methods -->
+      <div class="card">
+        <div class="card-title"><span>🧠</span> Analysis Method</div>
+        <div class="methods" id="methods">
+          <div class="method-card active" data-method="bertopic">
+            <div class="method-check">✓</div>
+            <div class="method-icon">🔮</div>
+            <div class="method-name">BERTopic</div>
+            <div class="method-desc">Real BERT embeddings — requires Colab URL</div>
+          </div>
+          <div class="method-card" data-method="lda">
+            <div class="method-check">✓</div>
+            <div class="method-icon">🧩</div>
+            <div class="method-name">LDA</div>
+            <div class="method-desc">Latent Dirichlet Allocation — fast topic modeling</div>
+          </div>
+          <div class="method-card" data-method="tfidf">
+            <div class="method-check">✓</div>
+            <div class="method-icon">📊</div>
+            <div class="method-name">TF-IDF</div>
+            <div class="method-desc">Score term importance across your corpus</div>
+          </div>
+          <div class="method-card" data-method="wordfreq">
+            <div class="method-check">✓</div>
+            <div class="method-icon">☁️</div>
+            <div class="method-name">Word Cloud</div>
+            <div class="method-desc">Visualize word frequency as a cloud</div>
+          </div>
+          <div class="method-card" data-method="sentiment" style="grid-column:1/-1">
+            <div class="method-check">✓</div>
+            <div class="method-icon">💬</div>
+            <div class="method-name">Sentiment Analysis</div>
+            <div class="method-desc">VADER (fast) or RoBERTa (accurate, requires Colab)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right / Config -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-title"><span>⚙️</span> Configuration</div>
+
+        <!-- BERTopic -->
+        <div id="cfg-bertopic">
+          <div class="config-row">
+            <div class="config-label">Number of Topics <span class="val" id="btTopicsVal">10</span></div>
+            <input type="range" id="btTopics" min="2" max="50" value="10" oninput="document.getElementById('btTopicsVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Min Topic Size <span class="val" id="btMinVal">5</span></div>
+            <input type="range" id="btMin" min="2" max="100" value="5" oninput="document.getElementById('btMinVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Language</div>
+            <select id="btLang"><option value="english">English</option><option value="spanish">Spanish</option><option value="french">French</option><option value="portuguese">Portuguese</option><option value="multilingual">Multilingual</option></select>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Reduce outliers</div><div class="toggle-sub">Merge noise into nearest topic</div></div>
+            <div class="toggle on" id="btOutliers" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+
+        <!-- LDA -->
+        <div id="cfg-lda" style="display:none">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">⚙️ Model Parameters</div>
+          <div class="config-row">
+            <div class="config-label">Number of Topics <span class="val" id="ldaTopicsVal">10</span></div>
+            <input type="range" min="2" max="50" value="10" oninput="document.getElementById('ldaTopicsVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Max Vocab Features <span class="val" id="ldaFeatVal">1000</span></div>
+            <input type="range" min="100" max="5000" step="100" value="1000" oninput="document.getElementById('ldaFeatVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Iterations <span class="val" id="ldaIterVal">20</span></div>
+            <input type="range" min="5" max="100" value="20" oninput="document.getElementById('ldaIterVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Alpha (Doc-Topic Prior)</div>
+            <select id="ldaAlpha">
+              <option value="auto">Auto (recommended)</option>
+              <option value="symmetric">Symmetric</option>
+              <option value="0.1">0.1 (sparse topics)</option>
+              <option value="0.5">0.5 (balanced)</option>
+              <option value="1.0">1.0 (uniform)</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Learning Method</div>
+            <select id="ldaLearn">
+              <option value="online">Online (fast, large corpus)</option>
+              <option value="batch">Batch (accurate, small corpus)</option>
+            </select>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin:14px 0 10px;padding-top:10px;border-top:1px solid var(--border)">🔬 Preprocessing (Research-Backed)</div>
+          <div class="config-row">
+            <div class="config-label">Min Word Length <span class="val" id="ldaMinLenVal">3</span></div>
+            <input type="range" min="2" max="8" value="3" oninput="document.getElementById('ldaMinLenVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Min Doc Frequency <span class="val" id="ldaMinDfVal">2</span> <span style="font-size:10px;color:var(--muted)">(ignore rare words)</span></div>
+            <input type="range" min="1" max="20" value="2" oninput="document.getElementById('ldaMinDfVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Max Doc Frequency <span class="val" id="ldaMaxDfVal">95</span>% <span style="font-size:10px;color:var(--muted)">(ignore common words)</span></div>
+            <input type="range" min="50" max="100" value="95" oninput="document.getElementById('ldaMaxDfVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">N-gram Range</div>
+            <select id="ldaNgram">
+              <option value="1,1">Unigrams only (1,1)</option>
+              <option value="1,2">Unigrams + Bigrams (1,2)</option>
+              <option value="2,2">Bigrams only (2,2)</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Custom Stopwords</div>
+            <input type="text" id="ldaCustomStop" placeholder="e.g. university, department, unit" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text);font-family:var(--font-mono);outline:none"/>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">Comma-separated words to exclude</div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Remove Stopwords</div><div class="toggle-sub">Filter common English words</div></div>
+            <div class="toggle on" id="ldaStopwords" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Lemmatization</div><div class="toggle-sub">running→run, studies→study (recommended)</div></div>
+            <div class="toggle" id="ldaLemmatize" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Stemming</div><div class="toggle-sub">More aggressive word reduction</div></div>
+            <div class="toggle" id="ldaStemming" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Remove Numbers</div><div class="toggle-sub">Strip digits from text</div></div>
+            <div class="toggle on" id="ldaNumbers" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">📈 Find Optimal Topics</div>
+            <div class="config-row">
+              <div class="config-label">Test range: <span class="val" id="cohMinVal">2</span> → <span class="val" id="cohMaxVal">20</span> topics</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Min</div>
+                <input type="range" min="2" max="10" value="2" oninput="document.getElementById('cohMinVal').textContent=this.value;updateRange(this)" id="cohMin"/>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Max</div>
+                <input type="range" min="5" max="30" value="20" oninput="document.getElementById('cohMaxVal').textContent=this.value;updateRange(this)" id="cohMax"/>
+              </div>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;text-align:center">Uses active backend URL</div>
+            <button class="coherence-btn" id="cohBtn" onclick="runCoherence()">📈 Calculate Coherence Scores</button>
+          </div>
+        </div>
+
+        <!-- TF-IDF -->
+        <div id="cfg-tfidf" style="display:none">
+          <div class="config-row">
+            <div class="config-label">Max Features <span class="val" id="tfidfFeatVal">50</span></div>
+            <input type="range" min="10" max="300" value="50" oninput="document.getElementById('tfidfFeatVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">N-gram Range</div>
+            <select id="ngramSel"><option value="1,1">Unigrams (1,1)</option><option value="1,2">Bigrams (1,2)</option><option value="1,3">Trigrams (1,3)</option></select>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Min Doc Frequency <span class="val" id="tfidfMinDfVal">2</span></div>
+            <input type="range" min="1" max="20" value="2" oninput="document.getElementById('tfidfMinDfVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Max Doc Frequency <span class="val" id="tfidfMaxDfVal">95</span>%</div>
+            <input type="range" min="50" max="100" value="95" oninput="document.getElementById('tfidfMaxDfVal').textContent=this.value;updateRange(this)"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Custom Stopwords</div>
+            <input type="text" id="tfidfCustomStop" placeholder="e.g. university, report" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text);font-family:var(--font-mono);outline:none"/>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Remove Stopwords</div></div>
+            <div class="toggle on" id="tfidfStop" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Lemmatization</div><div class="toggle-sub">Normalize word forms</div></div>
+            <div class="toggle" id="tfidfLem" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Remove Numbers</div></div>
+            <div class="toggle on" id="tfidfNums" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label" style="color:var(--accent3)">✨ Distinctive Mode</div>
+              <div class="toggle-sub">Rewards terms unique to specific sections<br>(fixes the "all scores = 1.0" problem)</div>
+            </div>
+            <div class="toggle" id="tfidfDistinct" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+
+        <!-- Word Cloud (LDA-based) -->
+        <div id="cfg-wordfreq" style="display:none">
+          <div style="background:rgba(124,109,250,0.07);border:1px solid rgba(124,109,250,0.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--accent);line-height:1.5">
+            &#9729;&#65039; Word Cloud runs <strong>LDA</strong> internally and shows each topic's top words as a visual cloud &mdash; sized by topic weight.
+          </div>
+          <div class="config-row">
+            <div class="config-label">Number of Topics <span class="val" id="wfTopicsVal">3</span></div>
+            <input type="range" min="2" max="15" value="3" oninput="document.getElementById('wfTopicsVal').textContent=this.value;updateRange(this)" id="wfTopics"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Words per Topic <span class="val" id="wfWordsVal">15</span></div>
+            <input type="range" min="5" max="30" value="15" oninput="document.getElementById('wfWordsVal').textContent=this.value;updateRange(this)" id="wfWords"/>
+          </div>
+          <div class="config-row">
+            <div class="config-label">Custom Stopwords</div>
+            <input type="text" id="wfCustomStop" placeholder="e.g. bme, uwina, ugp" onfocus="if(!this.value && document.getElementById('ldaCustomStop').value) { this.value=document.getElementById('ldaCustomStop').value; }" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text);font-family:var(--font-mono);outline:none"/>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">Comma-separated words to exclude</div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Remove Stopwords</div></div>
+            <div class="toggle on" id="wfStop" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Lemmatize words</div><div class="toggle-sub">running&rarr;run, studies&rarr;study</div></div>
+            <div class="toggle on" id="wfLem" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Remove Numbers</div></div>
+            <div class="toggle on" id="wfNums" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+
+        <!-- Sentiment -->
+        <div id="cfg-sentiment" style="display:none">
+          <div class="config-row">
+            <div class="config-label">Model</div>
+            <select id="sentModel">
+              <option value="vader">VADER — Fast, rule-based</option>
+              <option value="roberta">RoBERTa — Accurate (Colab only)</option>
+            </select>
+          </div>
+          <div id="robertaNote" style="display:none;background:rgba(250,109,154,0.08);border:1px solid rgba(250,109,154,0.2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--accent2);margin-bottom:12px">
+            ⚠️ RoBERTa requires the Colab backend. Make sure your Colab notebook is running and paste the ngrok URL above.
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Per-sentence scoring</div><div class="toggle-sub">Score each sentence individually</div></div>
+            <div class="toggle on" id="sentPer" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="run-btn" id="runBtn" onclick="runAnalysis()">▶ &nbsp; Run Analysis</button>
+    </div>
+
+    <!-- Error -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Loading -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-card">
+        <div class="progress-label" id="progressLabel">⚙️ Processing...</div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <div class="progress-step" id="progressStep">Sending files to backend...</div>
+      </div>
+    </div>
+
+    <!-- Coherence Panel -->
+    <div class="coherence-panel" id="coherencePanel">
+      <div class="coherence-header">
+        <div class="coherence-title">📈 Coherence Analysis</div>
+        <div class="optimal-badge" id="optimalBadge">Optimal: — topics</div>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px" id="cohRecText"></div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Coherence Score (higher = better topics)</div>
+      <div class="coherence-chart">
+        <div class="chart-bars" id="chartBars"></div>
+        <div class="chart-axes"><span id="chartMin"></span><span id="chartMax"></span></div>
+      </div>
+      <div class="perp-chart">
+        <div class="perp-title">Perplexity Score (lower = better fit)</div>
+        <div class="perp-line"><svg class="perp-svg" id="perpSvg" viewBox="0 0 400 60" preserveAspectRatio="none"></svg></div>
+        <div class="chart-axes"><span id="perpMin"></span><span id="perpMax"></span></div>
+      </div>
+      <div class="coherence-rec" id="cohRec">
+        <span style="font-size:20px">🎯</span>
+        <span id="cohRecMsg"></span>
+      </div>
+    </div>
+
+    <!-- Placeholder -->
+    <div class="results-placeholder" id="placeholder">
+      <div class="results-icon">🔬</div>
+      <div class="results-msg">Results will appear here</div>
+      <div class="results-sub">Upload files, choose a method, and click Run Analysis</div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-panel" id="resultsPanel">
+      <div class="results-header">
+        <div class="results-title" id="resultsTitle"></div>
+        <div class="results-meta" id="resultsMeta"></div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('summary',this)">Summary</button>
+        <button class="tab" onclick="switchTab('raw',this)">Raw JSON</button>
+      </div>
+      <div id="tabSummary"></div>
+      <div id="tabRaw" style="display:none"><div class="raw-code" id="rawData"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let uploadedFiles = [];
+let activeMethod = 'bertopic';
+const iconMap = {txt:'📄',pdf:'📕',xlsx:'📗'};
+
+// ── File upload ──
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+function renderFiles() {
+  const fl = document.getElementById('fileList');
+  fl.innerHTML = '';
+  uploadedFiles.forEach((f,i) => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const size = f.size < 1024*1024 ? (f.size/1024).toFixed(1)+'KB' : (f.size/1024/1024).toFixed(1)+'MB';
+    const el = document.createElement('div'); el.className='file-item';
+    el.innerHTML=`<span class="file-icon">${iconMap[ext]||'📄'}</span><span class="file-name">${f.name}</span><span class="file-size">${size}</span><button class="file-remove" onclick="removeFile(${i})">✕</button>`;
+    fl.appendChild(el);
+  });
+}
+function removeFile(i) { uploadedFiles.splice(i,1); renderFiles(); }
+fileInput.addEventListener('change', e => {
+  const existing = new Set(uploadedFiles.map(f => f.name + f.size));
+  const newFiles = [...e.target.files].filter(f => !existing.has(f.name + f.size));
+  uploadedFiles = [...uploadedFiles, ...newFiles];
+  if (newFiles.length < e.target.files.length) showError((e.target.files.length - newFiles.length) + ' duplicate file(s) skipped.');
+  renderFiles();
+});
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  const existing = new Set(uploadedFiles.map(f => f.name + f.size));
+  const newFiles = [...e.dataTransfer.files].filter(f => !existing.has(f.name + f.size));
+  uploadedFiles = [...uploadedFiles, ...newFiles];
+  if (newFiles.length < e.dataTransfer.files.length) showError((e.dataTransfer.files.length - newFiles.length) + ' duplicate file(s) skipped.');
+  renderFiles();
+});
+
+// ── Methods ──
+document.querySelectorAll('.method-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active'); activeMethod = card.dataset.method;
+    ['bertopic','lda','tfidf','wordfreq','sentiment'].forEach(m => {
+      document.getElementById('cfg-'+m).style.display = m===activeMethod?'':'none';
+    });
+  });
+});
+
+// RoBERTa note
+document.getElementById('sentModel').addEventListener('change', function() {
+  document.getElementById('robertaNote').style.display = this.value==='roberta'?'block':'none';
+});
+
+// ── Range sliders ──
+function updateRange(el) {
+  const pct = ((el.value-el.min)/(el.max-el.min))*100;
+  el.style.setProperty('--pct', pct+'%');
+}
+document.querySelectorAll('input[type=range]').forEach(updateRange);
+
+// ── Tab switching ──
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tabSummary').style.display = tab==='summary'?'':'none';
+  document.getElementById('tabRaw').style.display = tab==='raw'?'':'none';
+}
+
+// ── API ──
+function getApiUrl() { return document.getElementById('apiUrl').value.replace(/\/$/,''); }
+// Coherence always runs on Render (Colab doesn't have this endpoint)
+const RENDER_URL = 'https://textmine-backend.onrender.com';
+function getCoherenceUrl() {
+  // Always use whatever URL is active (Render or Colab)
+  return getApiUrl();
+}
+
+async function pingApi() {
+  const status = document.getElementById('apiStatus');
+  status.className = 'api-status'; // grey = loading
+  try {
+    const res = await fetch(getApiUrl()+'/health', {
+      signal: AbortSignal.timeout(90000),
+      headers: {'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json'}
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      status.className = (data.status === 'healthy' || data.status === 'ok') ? 'api-status ok' : 'api-status ok';
+    } else {
+      status.className = 'api-status err';
+    }
+  } catch(e) {
+    status.className = 'api-status err';
+    console.warn('Ping failed:', e.message);
+  }
+}
+
+// ── Progress ──
+const STEPS = {
+  bertopic:['Uploading files...','Generating BERT embeddings...','Clustering with HDBSCAN...','Computing c-TF-IDF scores...','Finalizing topics...'],
+  lda:['Uploading files...','Building vocabulary...','Running LDA algorithm...','Extracting topic words...'],
+  tfidf:['Uploading files...','Tokenizing text...','Computing TF-IDF matrix...','Ranking terms...'],
+  wordfreq:['Uploading files...','Counting word frequencies...','Building word cloud...'],
+  sentiment:['Uploading files...','Loading sentiment model...','Scoring sentences...','Aggregating results...']
+};
+let progressInterval = null;
+function startProgress(method) {
+  const steps = STEPS[method]; let i=0;
+  document.getElementById('progressFill').style.width='5%';
+  document.getElementById('progressStep').textContent=steps[0];
+  progressInterval = setInterval(()=>{
+    i=Math.min(i+1,steps.length-1);
+    document.getElementById('progressStep').textContent=steps[i];
+    document.getElementById('progressFill').style.width=(5+(i/(steps.length-1))*70)+'%';
+  },2000);
+}
+function stopProgress() { clearInterval(progressInterval); document.getElementById('progressFill').style.width='100%'; }
+
+// ── Build FormData ──
+function buildForm() {
+  const fd = new FormData();
+  if (activeMethod === 'bertopic') {
+    // BERTopic: send all files as 'files' (Colab expects List[UploadFile])
+    uploadedFiles.forEach(f => fd.append('files', f));
+  } else if (activeMethod === 'wordfreq') {
+    // wordfreq (word cloud): files appended as 'files' in runAnalysis; send first as fallback
+    if (uploadedFiles.length > 0) fd.append('file', uploadedFiles[0]);
+  } else {
+    // lda, tfidf, tfidf_perdoc, sentiment — send ALL files as 'files'
+    uploadedFiles.forEach(f => fd.append('files', f));
+  }
+  if (activeMethod==='bertopic') {
+    fd.append('num_topics', document.getElementById('btTopics').value);
+    fd.append('min_topic_size', document.getElementById('btMin').value);
+    fd.append('language', document.getElementById('btLang').value);
+    fd.append('reduce_outliers', document.getElementById('btOutliers').classList.contains('on'));
+  } else if (activeMethod==='lda') {
+    fd.append('num_topics', document.getElementById('ldaTopicsVal').textContent);
+    fd.append('max_features', document.getElementById('ldaFeatVal').textContent);
+    fd.append('max_iter', document.getElementById('ldaIterVal').textContent);
+    fd.append('alpha', document.getElementById('ldaAlpha').value);
+    fd.append('learning_method', document.getElementById('ldaLearn').value);
+    fd.append('min_word_len', document.getElementById('ldaMinLenVal').textContent);
+    fd.append('min_df', document.getElementById('ldaMinDfVal').textContent);
+    fd.append('max_df', (parseInt(document.getElementById('ldaMaxDfVal').textContent)/100).toFixed(2));
+    const ldaNg = document.getElementById('ldaNgram').value.split(',');
+    fd.append('ngram_min', ldaNg[0]); fd.append('ngram_max', ldaNg[1]);
+    fd.append('custom_stopwords', document.getElementById('ldaCustomStop').value);
+    fd.append('remove_stopwords', document.getElementById('ldaStopwords').classList.contains('on'));
+    fd.append('lemmatize', document.getElementById('ldaLemmatize').classList.contains('on'));
+    fd.append('stemming', document.getElementById('ldaStemming').classList.contains('on'));
+    fd.append('remove_numbers', document.getElementById('ldaNumbers').classList.contains('on'));
+  } else if (activeMethod==='tfidf') {
+    fd.append('max_features', document.getElementById('tfidfFeatVal').textContent);
+    const ng = document.getElementById('ngramSel').value.split(',');
+    fd.append('ngram_min', ng[0]); fd.append('ngram_max', ng[1]);
+    fd.append('min_df', document.getElementById('tfidfMinDfVal').textContent);
+    fd.append('max_df', (parseInt(document.getElementById('tfidfMaxDfVal').textContent)/100).toFixed(2));
+    fd.append('custom_stopwords', document.getElementById('tfidfCustomStop').value);
+    fd.append('remove_stopwords', document.getElementById('tfidfStop').classList.contains('on'));
+    fd.append('lemmatize', document.getElementById('tfidfLem').classList.contains('on'));
+    fd.append('remove_numbers', document.getElementById('tfidfNums').classList.contains('on'));
+  } else if (activeMethod==='wordfreq') {
+    fd.append('num_topics', document.getElementById('wfTopicsVal').textContent);
+    fd.append('max_features', 1000);
+    fd.append('max_iter', 20);
+    fd.append('alpha', 'auto');
+    fd.append('learning_method', 'online');
+    fd.append('min_word_len', 3);
+    // Adaptive min_df: for many short files use 1, for few large files use 2
+    const adaptiveMinDf = uploadedFiles.length > 10 ? 1 : 2;
+    const adaptiveMaxDf = uploadedFiles.length > 50 ? 0.98 : 0.90;
+    fd.append('min_df', adaptiveMinDf);
+    fd.append('max_df', adaptiveMaxDf);
+    fd.append('ngram_min', 1);
+    fd.append('ngram_max', 1);
+    fd.append('custom_stopwords', document.getElementById('wfCustomStop').value);
+    fd.append('remove_stopwords', document.getElementById('wfStop').classList.contains('on'));
+    fd.append('lemmatize', document.getElementById('wfLem').classList.contains('on'));
+    fd.append('stemming', false);
+    fd.append('remove_numbers', document.getElementById('wfNums').classList.contains('on'));
+  } else if (activeMethod==='sentiment') {
+    fd.append('model', document.getElementById('sentModel').value);
+    fd.append('per_sentence', document.getElementById('sentPer').classList.contains('on'));
+  }
+  return fd;
+}
+
+// ── Renderers ──
+function renderTopics(data) {
+  const label = data.method==='lda' ? '🧩 LDA Topics' : '🔮 Topics Discovered';
+  document.getElementById('resultsTitle').textContent = label;
+  let meta = `${data.num_topics} topics · ${data.num_docs} docs`;
+  if (data.vocab_size) meta += ` · vocab: ${data.vocab_size} words`;
+  if (data.preprocessing) {
+    const p = data.preprocessing;
+    const flags = [];
+    if (p.lemmatize) flags.push('lemmatized');
+    if (p.stemming) flags.push('stemmed');
+    if (p.remove_numbers) flags.push('no numbers');
+    if (flags.length) meta += ` · ${flags.join(', ')}`;
+  }
+  document.getElementById('resultsMeta').textContent = meta;
+  const grid = document.createElement('div'); grid.className='topic-grid';
+  data.topics.forEach((t,i) => {
+    const card = document.createElement('div'); card.className='topic-card';
+    card.style.animationDelay=(i*.05)+'s';
+    card.innerHTML=`<div class="topic-num">Topic ${t.topic_id} <span style="color:var(--muted)">${t.count} docs</span></div>
+      <div class="topic-words">${t.words.map((w,j)=>`<span class="topic-word ${j===0?'w1':j<3?'w2':''}">${w.word}</span>`).join('')}</div>`;
+    grid.appendChild(card);
+  });
+  document.getElementById('tabSummary').appendChild(grid);
+}
+
+function renderTfidf(data) {
+  document.getElementById('resultsTitle').textContent = '📊 TF-IDF Scores';
+  document.getElementById('resultsMeta').textContent = `${data.num_terms} terms · ${data.num_docs} sentences`;
+  const top = data.terms.slice(0,20); const max = top[0]?.score||1;
+  const list = document.createElement('div'); list.className='tfidf-list';
+  top.forEach(t => {
+    const el = document.createElement('div'); el.className='tfidf-item';
+    el.innerHTML=`<span class="tfidf-word">${t.word}</span><div class="tfidf-bar-wrap"><div class="tfidf-bar" style="width:${(t.score/max*100).toFixed(1)}%"></div></div><span class="tfidf-score">${t.score.toFixed(3)}</span>`;
+    list.appendChild(el);
+  });
+  document.getElementById('tabSummary').appendChild(list);
+}
+
+function renderWordfreq(data) {
+  // Word Cloud now uses LDA data — one cloud per topic
+  const maxWords = parseInt(document.getElementById('wfWordsVal')?.textContent || 15);
+  document.getElementById('resultsTitle').textContent = '☁️ LDA Topic Word Clouds';
+  document.getElementById('resultsMeta').textContent =
+    `${data.num_topics} topics · ${data.num_docs} docs · vocab: ${data.vocab_size||''} words`;
+
+  const topicColors = [
+    ['#7c6dfa','#9c6dfa','#bc8dfa','#6c5dda','#5c4dca'],
+    ['#fa6d9a','#fa8dba','#da4d7a','#fa6dba','#c43d6a'],
+    ['#6dfacc','#4ddaac','#8dfaec','#3dba8c','#6deabc'],
+    ['#fafa6d','#dada4d','#fafaad','#baba3d','#eaea5d'],
+    ['#6db8fa','#4d98da','#8dd8fa','#3d78ba','#6da8ea'],
+    ['#fa9a6d','#da7a4d','#fabа8d','#ba5a3d','#ea8a5d'],
+  ];
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:20px;';
+
+  data.topics.forEach((topic, ti) => {
+    const colors = topicColors[ti % topicColors.length];
+    const topWords = topic.words.slice(0, maxWords);
+    const maxScore = topWords[0]?.score || 1;
+
+    // Topic header
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+    header.innerHTML = `
+      <span style="font-family:var(--font-mono);font-size:11px;color:${colors[0]};text-transform:uppercase;letter-spacing:.1em;">
+        Topic ${topic.topic_id}
+      </span>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">${topic.count} docs</span>`;
+
+    // Cloud container
+    const cloud = document.createElement('div');
+    cloud.style.cssText = `
+      background:var(--surface2);border:1px solid var(--border);border-radius:14px;
+      padding:28px 20px;min-height:160px;
+      display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+      gap:8px 12px;position:relative;overflow:hidden;`;
+
+    // Subtle topic number watermark
+    const watermark = document.createElement('div');
+    watermark.textContent = `${ti}`;
+    watermark.style.cssText = `position:absolute;bottom:8px;right:14px;
+      font-family:var(--font-display);font-size:72px;font-weight:800;
+      color:${colors[0]};opacity:0.06;pointer-events:none;line-height:1;
+      z-index:0;user-select:none;`;
+    cloud.appendChild(watermark);
+
+    // True 2D spiral cloud layout using canvas-like placement
+    cloud.style.position = 'relative';
+    cloud.style.minHeight = '200px';
+    cloud.style.display = 'block';
+    cloud.style.padding = '16px';
+
+    const sorted = [...topWords].sort((a,b) => b.score - a.score);
+    // Place words after render using spiral from center
+    const placedWords = [];
+
+    sorted.forEach((item, i) => {
+      const rel = item.score / maxScore;
+      const fontSize = Math.round(10 + rel * 28);
+      const colorIdx = Math.floor(rel * (colors.length - 1));
+      const opacity = 0.55 + rel * 0.45;
+      const rotate = i % 4 === 0 ? -15 : i % 4 === 1 ? 0 : i % 4 === 2 ? 15 : 0;
+      const isBold = rel > 0.55;
+
+      const el = document.createElement('span');
+      el.textContent = item.word;
+      el.title = `score: ${item.score.toFixed(4)}`;
+      el.style.cssText = `
+        font-family:var(--font-display);
+        font-size:${fontSize}px;
+        font-weight:${isBold ? 700 : 400};
+        color:${colors[colorIdx]};
+        opacity:${opacity};
+        position:absolute;
+        white-space:nowrap;
+        transform:rotate(${rotate}deg);
+        transition:transform .2s,opacity .2s,font-size .2s;
+        cursor:default;
+        animation:fadeUp ${0.2 + i*0.05}s ease both;
+        line-height:1.2;`;
+      el.onmouseenter = () => { el.style.opacity='1'; el.style.transform='rotate(0deg) scale(1.15)'; el.style.zIndex='10'; };
+      el.onmouseleave = () => { el.style.opacity=opacity; el.style.transform=`rotate(${rotate}deg)`; el.style.zIndex=''; };
+      cloud.appendChild(el);
+      placedWords.push({el, rel});
+    });
+
+    // After DOM paint, do spiral placement
+    requestAnimationFrame(() => {
+      const W = cloud.offsetWidth || 700;
+      const H = Math.max(cloud.offsetHeight, 200);
+      const cx = W / 2, cy = H / 2;
+      const placed = []; // [{x,y,w,h}]
+
+      function overlaps(x, y, w, h) {
+        const pad = 6;
+        return placed.some(p =>
+          x < p.x + p.w + pad && x + w + pad > p.x &&
+          y < p.y + p.h + pad && y + h + pad > p.y
+        );
+      }
+
+      placedWords.forEach(({el}, i) => {
+        const ew = el.offsetWidth || (el.textContent.length * (parseInt(el.style.fontSize) * 0.6));
+        const eh = el.offsetHeight || parseInt(el.style.fontSize) * 1.4;
+        let placed_flag = false;
+        // Spiral outward from center
+        for (let r = 0; r < Math.max(W, H); r += 4) {
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.25) {
+            const x = cx + r * Math.cos(angle + i * 0.5) - ew / 2;
+            const y = cy + r * Math.sin(angle + i * 0.5) - eh / 2;
+            if (x < 4 || y < 4 || x + ew > W - 4 || y + eh > H - 4) continue;
+            if (!overlaps(x, y, ew, eh)) {
+              el.style.left = x + 'px';
+              el.style.top = y + 'px';
+              placed.push({x, y, w: ew, h: eh});
+              placed_flag = true;
+              break;
+            }
+          }
+          if (placed_flag) break;
+        }
+        if (!placed_flag) {
+          // fallback: just place it without collision check
+          const x = Math.random() * (W - 80);
+          const y = Math.random() * (H - 30);
+          el.style.left = x + 'px';
+          el.style.top = y + 'px';
+          placed.push({x, y, w: ew, h: eh});
+        }
+      });
+
+      // Dynamically expand container height to fit all words
+      const maxBottom = Math.max(...placed.map(p => p.y + p.h)) + 24;
+      cloud.style.minHeight = Math.max(maxBottom, 180) + 'px';
+    });
+
+    const block = document.createElement('div');
+    block.appendChild(header);
+    block.appendChild(cloud);
+    wrap.appendChild(block);
+  });
+
+  document.getElementById('tabSummary').appendChild(wrap);
+}
+
+function renderSentiment(data) {
+  const s=data.summary;
+  document.getElementById('resultsTitle').textContent='💬 Sentiment Analysis';
+  document.getElementById('resultsMeta').textContent=`${s.total_sentences} sentences · model: ${s.model_used} · avg: ${s.avg_compound}`;
+  const wrap=document.createElement('div');
+  wrap.innerHTML=`<div class="sentiment-summary">
+    <div class="sent-pill pos"><div class="sent-pill-pct">${s.positive_pct}%</div><div class="sent-pill-label">Positive</div></div>
+    <div class="sent-pill neu"><div class="sent-pill-pct">${s.neutral_pct}%</div><div class="sent-pill-label">Neutral</div></div>
+    <div class="sent-pill neg"><div class="sent-pill-pct">${s.negative_pct}%</div><div class="sent-pill-label">Negative</div></div>
+  </div>
+  \${data.sentences.length < data.summary.total_sentences ? \`<div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:8px;">Showing \${data.sentences.length} of \${data.summary.total_sentences} sentences</div>\` : ''}<table class="sent-table"><thead><tr><th>Sentence</th><th>Label</th><th>Score</th></tr></thead>
+  <tbody>${data.sentences.slice(0,200).map(r=>`<tr><td>${r.sentence}</td><td><span class="sent-label ${r.label}">${r.label}</span></td><td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">${r.compound.toFixed(3)}</td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('tabSummary').appendChild(wrap);
+}
+
+const renderers = {bertopic:renderTopics, lda:renderTopics, tfidf:renderTfidf, wordfreq:renderWordfreq, sentiment:renderSentiment};
+
+// ── Run ──
+async function runAnalysis() {
+  if (!uploadedFiles.length) { showError('Please upload at least one file.'); return; }
+  // Warn if BERTopic selected but Render URL is active (not Colab)
+  if (activeMethod === 'bertopic') {
+    const url = getApiUrl();
+    if (!url.includes('ngrok') && !url.includes('colab') && !url.includes('localhost')) {
+      showError('⚠️ BERTopic requires the Colab URL. Paste your ngrok URL in the Backend URL field above, or switch to LDA for fast topic modeling.');
+      return;
+    }
+  }
+  hideError();
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('placeholder').style.display='none';
+  document.getElementById('resultsPanel').classList.remove('visible');
+  document.getElementById('progressWrap').classList.add('visible');
+  document.getElementById('progressLabel').textContent='⚙️ Running '+activeMethod.toUpperCase()+'...';
+  document.getElementById('progressFill').style.width='0%';
+  startProgress(activeMethod);
+  try {
+    // Route wordfreq through LDA, tfidf_distinct through perdoc
+    let endpoint = activeMethod;
+    if (activeMethod === 'tfidf' && document.getElementById('tfidfDistinct') && document.getElementById('tfidfDistinct').classList.contains('on')) {
+      endpoint = 'tfidf_perdoc';
+    }
+    if (activeMethod === 'wordfreq') {
+      endpoint = 'lda';
+    }
+    const formData = buildForm();
+    // For word cloud (LDA): always append all files as 'files'
+    if (activeMethod === 'wordfreq') {
+      uploadedFiles.forEach(f => formData.append('files', f));
+    }
+    const res = await fetch(`${getApiUrl()}/analyze/${endpoint}`, {method:'POST', body:formData, headers:{'ngrok-skip-browser-warning':'true'}});
+    stopProgress();
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({detail:'Unknown error'}));
+      let detail = err.detail || err.message || `HTTP ${res.status}`;
+      if (Array.isArray(detail)) detail = detail.map(e => e.msg || JSON.stringify(e)).join('; ');
+      if (typeof detail === 'object') detail = JSON.stringify(detail);
+      throw new Error(detail);
+    }
+    const data = await res.json();
+    document.getElementById('progressWrap').classList.remove('visible');
+    const rp=document.getElementById('resultsPanel'); rp.classList.add('visible');
+    document.getElementById('tabSummary').innerHTML='';
+    document.getElementById('rawData').textContent=JSON.stringify(data,null,2);
+    document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+    document.getElementById('tabSummary').style.display='';
+    document.getElementById('tabRaw').style.display='none';
+    renderers[activeMethod](data);
+  } catch(e) {
+    stopProgress();
+    document.getElementById('progressWrap').classList.remove('visible');
+    document.getElementById('placeholder').style.display='';
+    showError(e.message||'Failed to reach backend.');
+  } finally { document.getElementById('runBtn').disabled=false; }
+}
+
+function showError(msg) { const b=document.getElementById('errorBanner'); b.textContent='⚠️ '+msg; b.classList.add('visible'); }
+function hideError() { document.getElementById('errorBanner').classList.remove('visible'); }
+
+// Restore saved backend URL from previous session
+(function() {
+  const saved = localStorage.getItem('textmine_api_url');
+  if (saved) {
+    document.getElementById('apiUrl').value = saved;
+  }
+})();
+
+// Auto-wake backend on page load — keeps Render alive
+window.addEventListener('load', () => {
+  pingApi();
+  // Re-ping every 4 minutes to prevent Render sleeping during a session
+  setInterval(pingApi, 4 * 60 * 1000);
+});
+
+// ── Coherence Analysis ──
+async function runCoherence() {
+  if (!uploadedFiles.length) { showError('Please upload a file first.'); return; }
+  hideError();
+
+  const btn = document.getElementById('cohBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Calculating... (may take 1-2 min)';
+
+  const minT = parseInt(document.getElementById('cohMin').value);
+  const maxT = parseInt(document.getElementById('cohMax').value);
+
+  const fd = new FormData();
+  // Send ALL files as 'files' — coherence needs the full corpus
+  uploadedFiles.forEach(f => fd.append('files', f));
+  fd.append('min_topics', minT);
+  fd.append('max_topics', maxT);
+  fd.append('max_features', document.getElementById('ldaFeatVal').textContent);
+  fd.append('max_iter', document.getElementById('ldaIterVal').textContent);
+  fd.append('lemmatize', document.getElementById('ldaLemmatize').classList.contains('on'));
+  fd.append('stemming', document.getElementById('ldaStemming').classList.contains('on'));
+  fd.append('remove_stopwords', document.getElementById('ldaStopwords').classList.contains('on'));
+  fd.append('remove_numbers', document.getElementById('ldaNumbers').classList.contains('on'));
+  fd.append('min_word_len', document.getElementById('ldaMinLenVal').textContent);
+  fd.append('min_df', document.getElementById('ldaMinDfVal').textContent);
+  fd.append('max_df', (parseInt(document.getElementById('ldaMaxDfVal').textContent)/100).toFixed(2));
+  const ng = document.getElementById('ldaNgram').value.split(',');
+  fd.append('ngram_min', ng[0]); fd.append('ngram_max', ng[1]);
+  fd.append('custom_stopwords', document.getElementById('ldaCustomStop').value);
+
+  try {
+    const res = await fetch(`${getCoherenceUrl()}/analyze/coherence`, {
+      method: 'POST', body: fd,
+      headers: {'ngrok-skip-browser-warning': 'true'}
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.detail||'Error'); }
+    const data = await res.json();
+    renderCoherence(data);
+  } catch(e) {
+    showError('Coherence analysis failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📈 Calculate Coherence Scores';
+  }
+}
+
+function renderCoherence(data) {
+  const panel = document.getElementById('coherencePanel');
+  panel.classList.add('visible');
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+
+  const metricLabel = data.coherence_metric === 'c_v' ? '🏆 C_V (Gensim)' : data.coherence_metric === 'npmi' ? '📐 NPMI' : '📊 UMass';
+  document.getElementById('optimalBadge').textContent = `✨ Optimal: ${data.optimal_topics} topics`;
+  // Show metric badge near chart title
+  const existingBadge = document.getElementById('metricBadge');
+  if (existingBadge) existingBadge.remove();
+  const metricBadge = document.createElement('span');
+  metricBadge.id = 'metricBadge';
+  metricBadge.textContent = metricLabel;
+  metricBadge.style.cssText = 'font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:12px;background:rgba(124,109,250,0.15);color:var(--accent);border:1px solid rgba(124,109,250,0.3);margin-left:10px;';
+  document.querySelector('.coherence-title').appendChild(metricBadge);
+  document.getElementById('cohRecMsg').textContent = data.recommendation;
+
+  // Draw coherence bars
+  const bars = document.getElementById('chartBars');
+  bars.innerHTML = '';
+  const maxN = Math.max(...data.coherence_normalized);
+  const metricAxisLabel = data.coherence_metric === 'c_v' ? 'COHERENCE SCORE C_V (HIGHER = BETTER)' : data.coherence_metric === 'npmi' ? 'COHERENCE SCORE NPMI (HIGHER = BETTER)' : 'COHERENCE SCORE UMASS (HIGHER = BETTER)';
+  const axisEl = document.querySelector('.coherence-panel > div:nth-child(2)');
+  if (axisEl && axisEl.style !== undefined) {
+    const labelEls = document.querySelectorAll('.coherence-panel [style*="font-mono"]');
+    labelEls.forEach(el => { if(el.textContent.includes('COHERENCE SCORE')) el.textContent = metricAxisLabel; });
+  }
+  document.getElementById('chartMin').textContent = `${data.topic_range[0]} topics`;
+  document.getElementById('chartMax').textContent = `${data.topic_range[data.topic_range.length-1]} topics`;
+
+  data.topic_range.forEach((n, i) => {
+    const pct = data.coherence_normalized[i];
+    const isOptimal = n === data.optimal_topics;
+    const wrap = document.createElement('div'); wrap.className = 'chart-bar-wrap';
+    wrap.title = `${n} topics: coherence = ${data.coherence_scores[i].toFixed(4)}`;
+    wrap.onclick = () => {
+      document.querySelectorAll('input[type=range]')[0].value = n;
+      document.getElementById('ldaTopicsVal').textContent = n;
+      showError('');
+      document.getElementById('cohRecMsg').style.fontWeight = '700';
+    };
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar' + (isOptimal ? ' optimal' : '');
+    bar.style.height = Math.max(pct / maxN * 160, 4) + 'px';
+    const label = document.createElement('div');
+    label.className = 'chart-label' + (isOptimal ? ' optimal' : '');
+    label.textContent = isOptimal ? `★${n}` : n;
+    wrap.appendChild(bar); wrap.appendChild(label);
+    bars.appendChild(wrap);
+  });
+
+  // Draw perplexity line
+  const svg = document.getElementById('perpSvg');
+  const perps = data.perplexity_scores;
+  const minP = Math.min(...perps); const maxP = Math.max(...perps);
+  const pts = perps.map((p, i) => {
+    const x = (i / (perps.length - 1)) * 398 + 1;
+    const y = 58 - ((p - minP) / (maxP - minP || 1)) * 54 + 1;
+    return `${x},${y}`;
+  }).join(' ');
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--accent2')}" stroke-width="2" stroke-linejoin="round"/>`;
+  document.getElementById('perpMin').textContent = `${data.topic_range[0]} topics (perp: ${minP.toFixed(0)})`;
+  document.getElementById('perpMax').textContent = `${data.topic_range[data.topic_range.length-1]} topics (perp: ${Math.max(...perps).toFixed(0)})`;
+}
+</script>
+</body>
+</html>
