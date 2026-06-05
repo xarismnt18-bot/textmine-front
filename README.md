@@ -47,6 +47,14 @@ A distinguishing feature is its **AI-assisted interpretation layer**, powered by
 
 ---
 
+## Notes
+
+BERTopic and RoBERTa analyses rely on an optional GPU-enabled backend hosted through Google Colab and ngrok.
+
+When the Colab notebook is not running, the platform may display the status "Unreachable". This is expected behaviour and only affects transformer-based analyses.
+
+All other functionalities (LDA, TF-IDF, WordCloud, Coherence Evaluation and VADER Sentiment Analysis) remain fully operational.
+
 ## Citation
 
 If you use TopicMiner in your research, please cite:
