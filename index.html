@@ -3713,6 +3713,13 @@ const PRESET_URLS = {
   render: 'https://textmine-backend.onrender.com'
 };
 
+// FIX: /ai/evaluate on the backend now requires this shared-secret header
+// (previously the endpoint was completely open and anyone could burn the
+// Anthropic API budget). This must match the BACKEND_API_KEY env var set on
+// the Render service. Since this is client-side JS it's visible to anyone who
+// views source — it stops casual/automated abuse, not a determined attacker.
+const BACKEND_API_KEY = 'OdzOO8ufm20L3Emgrqm2VoBkTFTC5xEDSpEPQZWLxY';
+
 // Methods that need Colab/GPU
 const COLAB_METHODS = new Set(['bertopic']);
 function needsColab(method) {
@@ -4357,8 +4364,9 @@ function renderCoherence(data){
   const svg=document.getElementById('perpSvg');
   const perps=data.perplexity_scores;
   const minP=Math.min(...perps),maxP=Math.max(...perps);
+  // FIX: guard divide-by-zero when only one topic count was tested (perps.length===1)
   const pts=perps.map((p,i)=>{
-    const x=(i/(perps.length-1))*398+1;
+    const x=(i/((perps.length-1)||1))*398+1;
     const y=58-((p-minP)/(maxP-minP||1))*54+1;
     return `${x},${y}`;
   }).join(' ');
@@ -4791,7 +4799,7 @@ async function runAiEval(userMessage) {
   try {
     const response = await fetch(PRESET_URLS.render + "/ai/evaluate", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true", "X-API-Key": BACKEND_API_KEY },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
@@ -4926,7 +4934,7 @@ async function renderCorpusSummary(data, method) {
   try {
     const res = await fetch(PRESET_URLS.render + '/ai/evaluate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'X-API-Key': BACKEND_API_KEY },
       body: JSON.stringify({
         system: 'You are a concise NLP analyst. Summarize corpora in plain, direct academic prose. No bullet points, no headers, no markdown.',
         messages: [{ role: 'user', content: prompt }]
@@ -4977,7 +4985,7 @@ async function renderStopwordSuggestions(data, method) {
   try {
     const res = await fetch(PRESET_URLS.render + '/ai/evaluate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'X-API-Key': BACKEND_API_KEY },
       body: JSON.stringify({
         system: 'You are an NLP preprocessing expert. Return ONLY a valid JSON array of strings. No markdown, no backticks, no explanation. Example: ["word1","word2","word3"]',
         messages: [{ role: 'user', content: prompt }]
